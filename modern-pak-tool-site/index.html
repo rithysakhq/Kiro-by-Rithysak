@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Modern PAK Tool by Rithysak is a compact Windows utility for packing and unpacking JX2 PAK archives with sidecar-aware name recovery.">
+    <meta name="theme-color" content="#eef6f3">
+    <meta property="og:title" content="Modern PAK Tool by Rithysak">
+    <meta property="og:description" content="A clean Windows utility for packing and unpacking JX2 PAK archives.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/images/app-screenshot.png">
+    <title>Modern PAK Tool by Rithysak</title>
+    <link rel="preload" href="/images/app-screenshot.png" as="image">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="site-header" data-glass>
+      <a class="brand" href="#top" aria-label="Modern PAK Tool home">
+        <span class="brand-mark" aria-hidden="true">PAK</span>
+        <span>Modern PAK Tool</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#workflow">Workflow</a>
+        <a href="#download">Download</a>
+        <a href="#support">Support</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-visual" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <p class="eyebrow">Windows PAK archive utility</p>
+          <h1 id="hero-title">Modern PAK Tool <span>by Rithysak</span></h1>
+          <p class="hero-copy">
+            Pack folders into JX2 PAK archives, unpack archives back to files, and keep sidecar-name recovery clear when original manifests are available.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="/downloads/PAKToolInstallation.exe" download>
+              <span aria-hidden="true">&darr;</span>
+              Download for Windows
+            </a>
+            <a class="button secondary" href="#download">View checksum</a>
+          </div>
+          <dl class="release-strip" aria-label="Release details">
+            <div>
+              <dt>Version</dt>
+              <dd>1.0.0</dd>
+            </div>
+            <div>
+              <dt>Installer</dt>
+              <dd>3.16 MB</dd>
+            </div>
+            <div>
+              <dt>Platform</dt>
+              <dd>Windows 10/11</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="section compact" id="workflow" aria-labelledby="workflow-title">
+        <div class="section-heading">
+          <p class="eyebrow">Core workflow</p>
+          <h2 id="workflow-title">Built for the two jobs that matter.</h2>
+        </div>
+        <div class="feature-grid">
+          <article class="glass-panel">
+            <span class="feature-icon" aria-hidden="true">01</span>
+            <h3>Pack folders</h3>
+            <p>Choose a source folder and the app suggests a sibling <code>.pak</code> path. The legacy engine writes the archive and matching <code>.pak.txt</code> sidecar.</p>
+          </article>
+          <article class="glass-panel">
+            <span class="feature-icon" aria-hidden="true">02</span>
+            <h3>Unpack archives</h3>
+            <p>Select a PAK and output folder. Matching TXT sidecars are preferred so original paths are preserved during extraction.</p>
+          </article>
+          <article class="glass-panel">
+            <span class="feature-icon" aria-hidden="true">03</span>
+            <h3>Recover names honestly</h3>
+            <p>When sidecars are missing, reference manifests can restore known paths. Otherwise the app keeps generated IDs and only adds safe inferred extensions.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section preview-section" aria-labelledby="preview-title">
+        <div class="section-heading">
+          <p class="eyebrow">Real app surface</p>
+          <h2 id="preview-title">Compact controls, visible status, no hidden workflow.</h2>
+        </div>
+        <figure class="app-frame" data-glass>
+          <img src="/images/app-screenshot.png" alt="Modern PAK Tool desktop interface showing Pack and Unpack controls.">
+        </figure>
+      </section>
+
+      <section class="section download-section" id="download" aria-labelledby="download-title">
+        <div class="download-panel" data-glass>
+          <div>
+            <p class="eyebrow">Direct installer</p>
+            <h2 id="download-title">PAKToolInstallation.exe</h2>
+            <p>
+              Installs the app into one clean folder with the main executable at the root and legacy engine files isolated under <code>Engine</code>.
+            </p>
+          </div>
+          <div class="download-actions">
+            <a class="button primary" href="/downloads/PAKToolInstallation.exe" download>
+              <span aria-hidden="true">&darr;</span>
+              Download installer
+            </a>
+            <a class="button secondary" href="/downloads/PAKToolInstallation.exe.sha256" download>Download checksum</a>
+          </div>
+          <div class="checksum-block">
+            <span>SHA256</span>
+            <code id="checksum" tabindex="-1">AE27A2368C5F65F98B89E39CD9A75D00CBE93A1255BF0483CF46A26B7411F6C7</code>
+            <button class="copy-button" type="button" data-copy-checksum>Copy</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section support-section" id="support" aria-labelledby="support-title">
+        <div class="section-heading">
+          <p class="eyebrow">Compatibility</p>
+          <h2 id="support-title">Clear platform support.</h2>
+        </div>
+        <div class="support-list">
+          <div>
+            <strong>x86 Windows</strong>
+            <span>Runs natively.</span>
+          </div>
+          <div>
+            <strong>x64 Windows</strong>
+            <span>Runs through standard 32-bit app compatibility.</span>
+          </div>
+          <div>
+            <strong>Windows on ARM</strong>
+            <span>Runs through Windows x86 emulation. Native ARM64 is not included because the legacy engine DLLs are x86.</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Modern PAK Tool by Rithysak</span>
+      <span>Installer release 1.0.0</span>
+    </footer>
+
+    <script src="/script.js" defer></script>
+  </body>
+</html>
