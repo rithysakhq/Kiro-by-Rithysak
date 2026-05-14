@@ -105,8 +105,6 @@ Copy-Item -LiteralPath $luaDll -Destination $stageEngine -Force
 $forbidden = @(
     (Join-Path $stage "PAKMAKER.exe"),
     (Join-Path $stage "RecoverySmoke.exe"),
-    (Join-Path $stage "super_logo.png"),
-    (Join-Path $stage "super_logo.ico"),
     (Join-Path $stage "kiro_app_icon.ico")
 )
 foreach ($path in $forbidden) {
