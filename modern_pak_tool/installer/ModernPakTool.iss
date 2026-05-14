@@ -1,4 +1,4 @@
-#define AppName "Modern PAK Tool by Rithysak"
+#define AppName "Kiro by Rithysak"
 #define AppVersion "1.0.0"
 #define AppVersionInfo "1.0.0.0"
 #define AppPublisher "Rithysak"
@@ -15,8 +15,8 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir=..\dist
-OutputBaseFilename=PAKToolInstallation
-SetupIconFile=..\bin\super_logo.ico
+OutputBaseFilename=KiroSetup
+SetupIconFile=..\bin\kiro_app_icon.ico
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

@@ -8,8 +8,9 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $out = Join-Path $root "bin"
 $src = Join-Path $root "src"
 $assets = Join-Path $root "..\assets"
-$logoPng = Join-Path $assets "super_logo.png"
-$logoIco = Join-Path $out "super_logo.ico"
+$appIconPng = Join-Path $assets "Kiro by Rithysak - AppIcon.png"
+$fullLogoPng = Join-Path $assets "Kiro by Rithysak - full logo.png"
+$appIconIco = Join-Path $out "kiro_app_icon.ico"
 $csc = Join-Path $env:WINDIR "Microsoft.NET\Framework\v4.0.30319\csc.exe"
 $wpf = Join-Path $env:WINDIR "Microsoft.NET\Framework\v4.0.30319\WPF"
 
@@ -17,8 +18,12 @@ if (!(Test-Path $csc)) {
     throw "C# compiler not found at $csc"
 }
 
-if (!(Test-Path $logoPng)) {
-    throw "App logo not found at $logoPng"
+if (!(Test-Path $appIconPng)) {
+    throw "Kiro app icon not found at $appIconPng"
+}
+
+if (!(Test-Path $fullLogoPng)) {
+    throw "Kiro full logo not found at $fullLogoPng"
 }
 
 if ($Clean -and (Test-Path $out)) {
@@ -76,25 +81,30 @@ function New-IcoFromPng($pngPath, $icoPath) {
     }
 }
 
-New-IcoFromPng $logoPng $logoIco
+New-IcoFromPng $appIconPng $appIconIco
 
 $hostOut = Join-Path $out "PakEngineHost.exe"
 $appOut = Join-Path $out "ModernPakTool.exe"
+$appSources = @(
+    (Join-Path $src "ModernPakTool.cs"),
+    (Join-Path $src "WorkbenchServices.cs")
+)
 
 & $csc /nologo /target:exe /platform:x86 /optimize+ "/out:$hostOut" `
     (Join-Path $src "PakEngineHost.cs")
 if ($LASTEXITCODE -ne 0) { throw "PakEngineHost build failed." }
 
 & $csc /nologo /target:winexe /platform:x86 /optimize+ "/out:$appOut" `
-    "/win32icon:$logoIco" `
-    "/resource:$logoPng,ModernPakTool.super_logo.png" `
+    "/win32icon:$appIconIco" `
+    "/resource:$appIconPng,ModernPakTool.kiro_app_icon.png" `
+    "/resource:$fullLogoPng,ModernPakTool.kiro_full_logo.png" `
     "/reference:$(Join-Path $wpf 'PresentationCore.dll')" `
     "/reference:$(Join-Path $wpf 'PresentationFramework.dll')" `
     "/reference:$(Join-Path $wpf 'WindowsBase.dll')" `
     /reference:System.Xaml.dll `
     /reference:System.Windows.Forms.dll `
     /reference:System.Drawing.dll `
-    (Join-Path $src "ModernPakTool.cs")
+    $appSources
 if ($LASTEXITCODE -ne 0) { throw "ModernPakTool build failed." }
 
 Copy-Item -LiteralPath (Join-Path $root "..\engine.dll") -Destination $out -Force

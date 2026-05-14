@@ -32,8 +32,10 @@ The current app now improves that sidecar-less fallback in two stages. First it 
 - That synthetic manifest uses names like `\_ID_01714fdf`, allowing the legacy extractor to recover contents without pretending it knows the original names.
 - After synthetic extraction, the app first tries exact recovery from `_manifest.tsv`, for example moving `_ID_01714fdf` to `settings\item\lifeskill\zhuangtai.txt`.
 - The preflight panel reports how many manifest entries have known paths and how many are manifest-unmapped before extraction starts.
-- Exact recovery stages generated-ID extraction in a temp folder, then writes only final recovered files and manifest-unmapped `_unknown_by_id` entries into the requested output.
+- Exact recovery stages generated-ID extraction in a temp folder, then writes only final recovered files and manifest-unmapped `_unknown_by_id` entries into the requested output. Unmapped entries keep ID-based stems because the original names are still unknown, but the app now adds conservative inferred extensions where signatures or text patterns are clear.
 - If exact recovery data is unavailable, the app inspects generated-ID files and renames only high-confidence matches, for example `_ID_01714fdf.txt`, `_ID_00aa5df3.lua`, `_ID_022986ad.spr`, or `_ID_0c4a456c.asf`.
+- After extraction, the workbench inventory classifies files as `ExactName`, `TypedUnknown`, `UnknownBinary`, or `ToolReport` and writes `_pak_tool_inventory.tsv`.
+- `_pak_tool_recovery_summary.txt` is written to explain counts and the limitation that unknown-ID files are missing original paths, not automatically corrupted.
 - `engine.dll` itself contains a legacy fallback string matching the same idea: `\_-ID-_%08x`.
 - `engine.dll` exports hash-related APIs such as `g_FileNameHash`, `g_StringHash`, and `g_StringLowerHash`.
 
@@ -137,7 +139,8 @@ The current fallback behavior is technically conservative:
 - If no real TXT manifest exists, look for a reference `_manifest.tsv` from a prior verified unpack.
 - If a reference manifest exists, restore known original paths directly after extraction.
 - If no reference manifest exists, extract bytes using `_ID_<hash>` names and add inferred extensions only for known signatures or clear text patterns.
-- Leave manifest-unmapped files under `_unknown_by_id`, or extensionless in fallback mode, instead of inventing fake names.
+- Leave manifest-unmapped files under `_unknown_by_id`, or ID-stemmed in fallback mode, instead of inventing fake names. Apply conservative inferred extensions to both paths where file signatures or text patterns are clear.
+- Build an inventory after extraction so users can filter typed unknowns, unknown binaries, text/config/script files, and sprites/resources before deciding what to inspect or edit.
 - Write a recovery report only for extension-inference fallback, not for exact-reference recovery.
 
 A future exact "Name Recovery" feature would still need external evidence:

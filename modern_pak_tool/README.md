@@ -1,6 +1,14 @@
-# Modern PAK Tool by Rithysak
+# Kiro by Rithysak
 
-Compact WPF replacement UI for the legacy JX2 PAK maker tool.
+Compact WPF recovery workbench for JX2 PAK archives. It still packs and unpacks through the legacy engine, and now adds inspection, inventory, and safer explanations for sidecar-less files.
+
+## Workbench Modes
+
+- `Pack`: builds a PAK from a folder and writes the matching `.pak.txt` sidecar.
+- `Unpack`: extracts an archive, prefers real sidecars, and generates structured recovery summaries.
+- `Inspect`: scans any unpacked output folder without rewriting game payloads, classifies recovered names, typed unknowns, and unknown binaries, and writes `_pak_tool_inventory.tsv`.
+- `Reports`: shows the latest operation summary and opens generated inventory/recovery reports.
+- `Settings`: shows safe-first defaults and the reference manifest paths searched for the selected PAK.
 
 ## Local Build
 
@@ -18,10 +26,10 @@ bin\
   PakEngineHost.exe
   engine.dll
   lualibdll.dll
-  super_logo.ico
+  kiro_app_icon.ico
 ```
 
-`super_logo.ico` is a build artifact used for the executable and installer icon. The PNG logo is embedded into `ModernPakTool.exe`; it is not needed as a runtime file after a clean build.
+`kiro_app_icon.ico` is a build artifact used for the executable and installer icon. The Kiro app icon and full wordmark PNGs are embedded into `ModernPakTool.exe`; they are not needed as runtime files after a clean build.
 
 ## Installer Build
 
@@ -37,8 +45,8 @@ The script:
 - stages a compact install layout under `obj\installer-stage`,
 - verifies the staged legacy engine with `PakEngineHost.exe probe`,
 - compiles `installer\ModernPakTool.iss`,
-- writes `dist\PAKToolInstallation.exe`,
-- writes `dist\PAKToolInstallation.exe.sha256`.
+- writes `dist\KiroSetup.exe`,
+- writes `dist\KiroSetup.exe.sha256`.
 
 Temporary staging is removed after a successful build. Use `-KeepStage` if you need to inspect it.
 
@@ -53,7 +61,7 @@ If `ISCC.exe` is not on `PATH`, pass it explicitly:
 The installer intentionally keeps the installed folder small:
 
 ```text
-Modern PAK Tool by Rithysak\
+Kiro by Rithysak\
   ModernPakTool.exe
   Engine\
     PakEngineHost.exe
@@ -70,8 +78,9 @@ The installer does not include:
 
 - `PAKMAKER.exe`
 - `RecoverySmoke.exe`
-- `super_logo.png`
-- `super_logo.ico`
+- `Kiro by Rithysak - AppIcon.png`
+- `Kiro by Rithysak - full logo.png`
+- `kiro_app_icon.ico`
 - source files or notes
 
 ## Platform Support
@@ -88,8 +97,9 @@ The installer does not include:
 - The legacy engine writes a matching sidecar manifest beside new archives as `<archive>.pak.txt`.
 - The unpack flow prefers the matching TXT sidecar because it contains original file paths.
 - If no TXT sidecar exists, the app first looks for a reference `_unpacked_pak\<pak name>\_manifest.tsv` near the selected client data.
-- When that reference manifest is found, the app shows known/unmapped counts before extraction, stages extraction in a temp folder, restores known files to original paths, and preserves manifest-unmapped IDs under `_unknown_by_id`.
-- If no reference manifest is found, the app falls back to `_ID_<hash>` names and adds conservative inferred extensions where file signatures are clear.
+- When that reference manifest is found, the app shows known/unmapped counts before extraction, stages extraction in a temp folder, restores known files to original paths, and preserves manifest-unmapped IDs under `_unknown_by_id` with conservative inferred extensions where file signatures or text patterns are clear.
+- If no reference manifest is found, the app falls back to `_ID_<hash>` names and adds conservative inferred extensions where file signatures or text patterns are clear.
+- After unpacking, the app writes `_pak_tool_inventory.tsv` and `_pak_tool_recovery_summary.txt` beside the output. These reports explain that unknown-ID files are valid extracted entries whose original paths were not recovered, not automatically corrupted files.
 - Exact-reference recovery does not leave generated-ID files, temporary manifests, or recovery reports in the output folder.
 - Extension-only fallback writes `_pak_tool_name_recovery_report.txt` because that mode is inferential and should document its guesses.
 - See `PAK_FORMAT_NOTES.md` for the investigated TXT/sidecar behavior.
@@ -102,7 +112,7 @@ The future download website should be a separate project. Do not mix website fil
 Recommended v1 website stack:
 
 - Vercel for hosting.
-- GitHub Releases, Supabase Storage, or similar object storage for `PAKToolInstallation.exe`.
+- GitHub Releases, Supabase Storage, or similar object storage for `KiroSetup.exe`.
 - Supabase database only if accounts, download logs, release metadata, or a waitlist are needed.
 
 The website should state that Windows on ARM support uses x86 emulation, not native ARM64.

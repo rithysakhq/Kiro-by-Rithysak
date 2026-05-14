@@ -74,7 +74,7 @@ function Reset-Directory {
     New-Item -ItemType Directory -Force -Path $Path | Out-Null
 }
 
-Write-Host "Building Modern PAK Tool..."
+Write-Host "Building Kiro..."
 & (Join-Path $root "build.ps1") -Clean
 if ($LASTEXITCODE -ne 0) {
     throw "Application build failed."
@@ -84,7 +84,7 @@ $appExe = Join-Path $bin "ModernPakTool.exe"
 $hostExe = Join-Path $bin "PakEngineHost.exe"
 $engineDll = Join-Path $bin "engine.dll"
 $luaDll = Join-Path $bin "lualibdll.dll"
-$setupIcon = Join-Path $bin "super_logo.ico"
+$setupIcon = Join-Path $bin "kiro_app_icon.ico"
 
 Assert-File $appExe
 Assert-File $hostExe
@@ -106,7 +106,8 @@ $forbidden = @(
     (Join-Path $stage "PAKMAKER.exe"),
     (Join-Path $stage "RecoverySmoke.exe"),
     (Join-Path $stage "super_logo.png"),
-    (Join-Path $stage "super_logo.ico")
+    (Join-Path $stage "super_logo.ico"),
+    (Join-Path $stage "kiro_app_icon.ico")
 )
 foreach ($path in $forbidden) {
     if (Test-Path -LiteralPath $path) {
@@ -128,6 +129,15 @@ finally {
 
 $iscc = Resolve-Iscc $InnoSetupCompiler
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
+$legacyInstallerOutputs = @(
+    (Join-Path $dist "PAKToolInstallation.exe"),
+    (Join-Path $dist "PAKToolInstallation.exe.sha256")
+)
+foreach ($legacyOutput in $legacyInstallerOutputs) {
+    if (Test-Path -LiteralPath $legacyOutput) {
+        Remove-Item -LiteralPath $legacyOutput -Force
+    }
+}
 
 Write-Host "Compiling installer with $iscc..."
 & $iscc $iss "/O$dist"
@@ -135,12 +145,12 @@ if ($LASTEXITCODE -ne 0) {
     throw "Installer build failed."
 }
 
-$installer = Join-Path $dist "PAKToolInstallation.exe"
+$installer = Join-Path $dist "KiroSetup.exe"
 Assert-File $installer
 
 $hash = Get-FileHash -LiteralPath $installer -Algorithm SHA256
 $checksumPath = $installer + ".sha256"
-Set-Content -LiteralPath $checksumPath -Encoding ASCII -Value ($hash.Hash + "  PAKToolInstallation.exe")
+Set-Content -LiteralPath $checksumPath -Encoding ASCII -Value ($hash.Hash + "  KiroSetup.exe")
 
 Write-Host "Built $installer"
 Write-Host "SHA256 written to $checksumPath"

@@ -1,13 +1,25 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "headers": [
+  "redirects": [
     {
       "source": "/downloads/PAKToolInstallation.exe",
+      "destination": "/downloads/KiroSetup.exe",
+      "permanent": true
+    },
+    {
+      "source": "/downloads/PAKToolInstallation.exe.sha256",
+      "destination": "/downloads/KiroSetup.exe.sha256",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/downloads/KiroSetup.exe",
       "headers": [
         {
           "key": "Content-Disposition",
-          "value": "attachment; filename=\"PAKToolInstallation.exe\""
+          "value": "attachment; filename=\"KiroSetup.exe\""
         },
         {
           "key": "Cache-Control",
@@ -16,11 +28,11 @@
       ]
     },
     {
-      "source": "/downloads/PAKToolInstallation.exe.sha256",
+      "source": "/downloads/KiroSetup.exe.sha256",
       "headers": [
         {
           "key": "Content-Disposition",
-          "value": "attachment; filename=\"PAKToolInstallation.exe.sha256\""
+          "value": "attachment; filename=\"KiroSetup.exe.sha256\""
         },
         {
           "key": "Cache-Control",
