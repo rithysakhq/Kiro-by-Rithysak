@@ -30,3 +30,5 @@ modern-pak-tool-site\downloads\KiroSetup.exe
 ```
 
 Vercel should deploy from the `modern-pak-tool-site` directory.
+
+The root `vercel.json` also supports repo-root imports by rewriting public routes to `modern-pak-tool-site/`.

@@ -1,0 +1,66 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/modern-pak-tool-site/index.html"
+    },
+    {
+      "source": "/styles.css",
+      "destination": "/modern-pak-tool-site/styles.css"
+    },
+    {
+      "source": "/script.js",
+      "destination": "/modern-pak-tool-site/script.js"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/modern-pak-tool-site/robots.txt"
+    },
+    {
+      "source": "/images/(.*)",
+      "destination": "/modern-pak-tool-site/images/$1"
+    },
+    {
+      "source": "/downloads/PAKToolInstallation.exe",
+      "destination": "/modern-pak-tool-site/downloads/KiroSetup.exe"
+    },
+    {
+      "source": "/downloads/PAKToolInstallation.exe.sha256",
+      "destination": "/modern-pak-tool-site/downloads/KiroSetup.exe.sha256"
+    },
+    {
+      "source": "/downloads/(.*)",
+      "destination": "/modern-pak-tool-site/downloads/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/downloads/KiroSetup.exe",
+      "headers": [
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"KiroSetup.exe\""
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/downloads/KiroSetup.exe.sha256",
+      "headers": [
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"KiroSetup.exe.sha256\""
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+}
