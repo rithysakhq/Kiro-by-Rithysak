@@ -1,0 +1,51 @@
+name: Deploy Kiro Site To Vercel
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/vercel-production.yml"
+      - "modern-pak-tool-site/**"
+      - "vercel.json"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Check Vercel secrets
+        id: secrets
+        shell: bash
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Vercel deploy because VERCEL_TOKEN, VERCEL_ORG_ID, or VERCEL_PROJECT_ID is missing."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Link Vercel project
+        if: steps.secrets.outputs.ready == 'true'
+        shell: bash
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+
+      - name: Deploy production
+        if: steps.secrets.outputs.ready == 'true'
+        run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
