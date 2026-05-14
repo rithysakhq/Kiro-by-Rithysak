@@ -2,6 +2,8 @@
 
 Kiro is a compact Windows workbench for JX PAK archives. It packs folders, unpacks archives, checks sidecar manifest status, inspects extracted outputs, and writes recovery reports without rewriting legacy game payloads.
 
+Website: https://rithysakhq.github.io/Kiro-by-Rithysak/
+
 ## Project Layout
 
 - `modern_pak_tool/`: WPF desktop app, legacy engine host, installer script, and release output.
