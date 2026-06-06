@@ -7,6 +7,10 @@
 - The native pack-shell API can pack a folder without an input TXT by setting a root path, creating a package, adding files, and closing the package.
 - Closing a package writes the PAK and a sidecar named `<pak path>.txt`. For `data.pak`, the legacy output is `data.pak.txt`.
 - Existing game PAKs can be indexed without a TXT: the PAK header contains the file count and index-table offset, and each 16-byte index entry stores ID, data offset, unpacked size, and packed-size/flag bits.
+- `PakEngineHost packfolder` now writes the PACK header, payloads, index table, and sidecar in managed code. The legacy `CreatePackFileShell` add-file path could crash while adding image/resource payloads, leaving a zero-entry partial PAK with raw data appended after the header.
+- Managed pack output stores entries uncompressed, hashes virtual paths with the JX2 GBK path hash, writes file CRCs in the sidecar, and writes the package header CRC from the generated index table.
+- Before reporting success, the managed builder refuses duplicate archive IDs, rejects paths that cannot be encoded in the JX2 GBK code page, sorts entries by archive ID, parses the generated PAK back from disk, confirms the header/index/CRC/entry bounds, and checks the sidecar rows against the planned manifest.
+- The ID sort is important: a scratch pack/unpack test with both a root file and a nested file only restored the nested original path after the PAK index and sidecar rows were written in archive-ID order.
 - The legacy `PAKMAKER.exe` runtime memory contains `openFileDialog3` next to `PAK List File (*.txt)|*.txt`.
 - The legacy window title is `JX2 Build PAK by Nita`.
 - The sidecar format is tab separated:

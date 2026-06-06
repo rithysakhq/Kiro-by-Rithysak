@@ -93,8 +93,8 @@ The installer does not include:
 ## Runtime Notes
 
 - The app is built as x86 because the legacy backend DLLs are x86.
-- The pack flow calls the legacy pack-shell API directly. Users do not need to provide a TXT file when packing a folder.
-- The legacy engine writes a matching sidecar manifest beside new archives as `<archive>.pak.txt`.
+- The pack flow writes the PAK header, payloads, index table, and matching TXT sidecar through Kiro's managed builder. Users do not need to provide a TXT file when packing a folder.
+- Packing validates duplicate archive IDs, GBK path encoding, generated index data, header CRC, uncompressed entry flags, and sidecar consistency before reporting success.
 - The unpack flow prefers the matching TXT sidecar because it contains original file paths.
 - If no TXT sidecar exists, the app first looks for a reference `_unpacked_pak\<pak name>\_manifest.tsv` near the selected client data.
 - When that reference manifest is found, the app shows known/unmapped counts before extraction, stages extraction in a temp folder, restores known files to original paths, and preserves manifest-unmapped IDs under `_unknown_by_id` with conservative inferred extensions where file signatures or text patterns are clear.

@@ -1544,7 +1544,7 @@ public sealed class MainWindow : Window
             return;
         }
 
-        SetBusy("Scanning", "Counting files before handing the folder to the legacy engine.");
+        SetBusy("Scanning", "Counting files before building the PAK manifest.");
         try
         {
             int fileCount;
@@ -1564,13 +1564,13 @@ public sealed class MainWindow : Window
                 return;
             }
 
-            SetStatus("Running", "The legacy engine is creating the PAK archive and TXT sidecar.", UiTone.Busy);
-            SetDetails("Mode: Pack\r\nSource folder: " + folder + "\r\nOutput PAK: " + output + "\r\nOutput sidecar: " + output + ".txt\r\nFiles discovered: " + fileCount.ToString());
+            SetStatus("Running", "Building the PAK archive, TXT sidecar, and validation checks.", UiTone.Busy);
+            SetDetails("Mode: Pack\r\nSource folder: " + folder + "\r\nOutput PAK: " + output + "\r\nOutput sidecar: " + output + ".txt\r\nFiles discovered: " + fileCount.ToString() + "\r\nValidation: duplicate archive IDs, GBK paths, index table, CRC, and sidecar consistency");
             OperationResult result = await Task.Run(delegate { return PakOperations.Pack(folder, output); });
             if (result.Success)
             {
                 SetStatus("Complete", result.Message, UiTone.Success);
-                SetDetails("Pack completed.\r\nSource folder: " + folder + "\r\nOutput PAK: " + output + "\r\nOutput sidecar: " + output + ".txt\r\nFiles packed: " + result.FileCount.ToString());
+                SetDetails("Pack completed and validated.\r\nSource folder: " + folder + "\r\nOutput PAK: " + output + "\r\nOutput sidecar: " + output + ".txt\r\nFiles packed: " + result.FileCount.ToString());
                 AddRecent("Packed: " + output);
             }
             else
@@ -2939,7 +2939,7 @@ internal static class PakOperations
                 return new OperationResult
                 {
                     Success = false,
-                    Message = CleanMessage(process.Error, process.Output, "The legacy pack engine did not complete successfully."),
+                    Message = CleanMessage(process.Error, process.Output, "The PAK builder did not complete successfully."),
                     FileCount = files.Length
                 };
             }
@@ -2949,7 +2949,7 @@ internal static class PakOperations
                 return new OperationResult
                 {
                     Success = false,
-                    Message = "The legacy pack engine finished but did not produce a PAK file.",
+                    Message = "The PAK builder finished but did not produce a PAK file.",
                     FileCount = files.Length
                 };
             }
