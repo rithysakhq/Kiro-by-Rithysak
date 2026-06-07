@@ -2,10 +2,13 @@
 
 Kiro is a compact Windows workbench for JX PAK archives. It packs folders, unpacks archives, checks sidecar manifest status, inspects extracted outputs, and writes recovery reports without rewriting legacy game payloads.
 
+Website: https://rithysakhq.github.io/Kiro-by-Rithysak/
+
 ## Project Layout
 
 - `modern_pak_tool/`: WPF desktop app, legacy engine host, installer script, and release output.
-- `assets/`: Kiro source brand assets used by the app.
+- `modern-pak-tool-site/`: static Vercel website and public installer download.
+- `assets/`: Kiro source brand assets used by the app and website.
 
 ## Build
 
@@ -20,8 +23,14 @@ The release installer is written to:
 modern_pak_tool\dist\KiroSetup.exe
 ```
 
-## Distribution
+## Website
 
-The public website and download publishing are maintained outside this desktop
-tool repository. Build the installer here, then hand `modern_pak_tool\dist\KiroSetup.exe`
-and `modern_pak_tool\dist\KiroSetup.exe.sha256` to the website owner for release.
+The public website is a static site under `modern-pak-tool-site/`. The current download file is:
+
+```text
+modern-pak-tool-site\downloads\KiroSetup.exe
+```
+
+Vercel should deploy from the `modern-pak-tool-site` directory.
+
+The root `vercel.json` also supports repo-root imports by rewriting public routes to `modern-pak-tool-site/`.
