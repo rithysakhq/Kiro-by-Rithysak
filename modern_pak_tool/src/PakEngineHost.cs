@@ -27,7 +27,7 @@ internal static class PakEngineHost
         try
         {
             if (args.Length < 1)
-                return Fail(2, "Usage: PakEngineHost version | probe [runtime] | packfolder [runtime] <folder> <output.pak> | unpackfolder <pak> <sidecar.txt> <outputFolder>");
+                return Fail(2, "Usage: PakEngineHost version | probe [runtime] | packfolder [runtime] <folder> <output.pak> | packfolderlegacy [runtime] <folder> <output.pak> | unpackfolder <pak> <sidecar.txt> <outputFolder>");
 
             string mode = args[0].ToLowerInvariant();
             if (mode == "version")
@@ -46,6 +46,15 @@ internal static class PakEngineHost
                 if (args.Length == 4)
                     return PackFolder(args[2], args[3]);
                 return Fail(2, "Usage: PakEngineHost packfolder [runtime] <folder> <output.pak>");
+            }
+
+            if (mode == "packfolderlegacy")
+            {
+                if (args.Length == 3)
+                    return PackFolderLegacy(args[1], args[2]);
+                if (args.Length == 4)
+                    return PackFolderLegacy(args[2], args[3]);
+                return Fail(2, "Usage: PakEngineHost packfolderlegacy [runtime] <folder> <output.pak>");
             }
 
             if (mode == "unpackfolder")
@@ -126,6 +135,67 @@ internal static class PakEngineHost
         Console.WriteLine("OutputPak=" + outputPakPath);
         Console.WriteLine("OutputSidecar=" + outputPakPath + ".txt");
         Console.WriteLine("PackValidation=Success");
+        Console.WriteLine("PackResult=Success");
+        return File.Exists(outputPakPath) ? 0 : 23;
+    }
+
+    private static int PackFolderLegacy(string folderPath, string outputPakPath)
+    {
+        folderPath = Path.GetFullPath(folderPath);
+        outputPakPath = Path.GetFullPath(outputPakPath);
+
+        if (!Directory.Exists(folderPath))
+            return Fail(3, "Folder not found: " + folderPath);
+
+        string parent = Path.GetDirectoryName(outputPakPath);
+        if (!Directory.Exists(parent))
+            Directory.CreateDirectory(parent);
+
+        string[] files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+        Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+        if (files.Length == 0)
+            return Fail(5, "Folder has no files to pack: " + folderPath);
+
+        IntPtr engine = LoadEngine();
+        IntPtr proc = RequireProc(engine, "CreatePackFileShell");
+        CreatePackFileShellDelegate create = (CreatePackFileShellDelegate)Marshal.GetDelegateForFunctionPointer(
+            proc, typeof(CreatePackFileShellDelegate));
+
+        IntPtr shell = new IntPtr(create());
+        if (shell == IntPtr.Zero)
+            return Fail(20, "CreatePackFileShell returned null.");
+
+        SetRootPathDelegate setRoot = GetVTableDelegate<SetRootPathDelegate>(shell, 1);
+        OpenPackageDelegate openPackage = GetVTableDelegate<OpenPackageDelegate>(shell, 2);
+        ClosePackageDelegate closePackage = GetVTableDelegate<ClosePackageDelegate>(shell, 3);
+        AddFileDelegate addFile = GetVTableDelegate<AddFileDelegate>(shell, 6);
+
+        setRoot(shell, AppendSlash(folderPath));
+        int packageIndex = openPackage(shell, outputPakPath, 0, 0);
+        if (packageIndex < 0)
+            return Fail(21, "The legacy pack engine could not create the output PAK.");
+
+        int added = 0;
+        try
+        {
+            for (int i = 0; i < files.Length; i++)
+            {
+                string relative = MakeRelative(folderPath, files[i]).Replace('/', '\\');
+                byte ok = addFile(shell, packageIndex, relative);
+                if (ok == 0)
+                    return Fail(22, "The legacy pack engine could not add file: " + relative);
+                added++;
+            }
+        }
+        finally
+        {
+            closePackage(shell, packageIndex);
+        }
+
+        Console.WriteLine("PackedFiles=" + added.ToString());
+        Console.WriteLine("OutputPak=" + outputPakPath);
+        Console.WriteLine("OutputSidecar=" + outputPakPath + ".txt");
+        Console.WriteLine("PackMode=LegacyEngine");
         Console.WriteLine("PackResult=Success");
         return File.Exists(outputPakPath) ? 0 : 23;
     }
