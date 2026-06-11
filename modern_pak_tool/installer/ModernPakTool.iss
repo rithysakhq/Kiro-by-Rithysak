@@ -1,6 +1,6 @@
 #define AppName "Kiro by Rithysak"
-#define AppVersion "0.1.3"
-#define AppVersionInfo "0.1.3.0"
+#define AppVersion "0.1.4"
+#define AppVersionInfo "0.1.4.0"
 #define AppPublisher "Rithysak"
 #define AppExeName "ModernPakTool.exe"
 #define StageDir "..\obj\installer-stage"

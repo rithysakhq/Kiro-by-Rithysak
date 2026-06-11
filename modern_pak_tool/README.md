@@ -5,6 +5,9 @@ Compact WPF recovery workbench for JX2 PAK archives. It still packs and unpacks 
 ## Workbench Modes
 
 - `Pack`: builds a PAK from a folder and writes the matching `.pak.txt` sidecar.
+- `Patch PAK` engine mode: starts from an existing PAK, preserves unchanged
+  entries byte-for-byte, and replaces only files present in a source folder by
+  their JX2 archive IDs.
 - `Unpack`: extracts an archive, prefers real sidecars, and generates structured recovery summaries.
 - `Inspect`: scans any unpacked output folder without rewriting game payloads, classifies recovered names, typed unknowns, and unknown binaries, and writes `_pak_tool_inventory.tsv`.
 - `Reports`: shows the latest operation summary and opens generated inventory/recovery reports.
@@ -95,6 +98,14 @@ The installer does not include:
 - The app is built as x86 because the legacy backend DLLs are x86.
 - The pack flow writes the PAK header, payloads, index table, and matching TXT sidecar through Kiro's managed builder. Users do not need to provide a TXT file when packing a folder.
 - Packing validates duplicate archive IDs, GBK path encoding, generated index data, header CRC, uncompressed entry flags, and sidecar consistency before reporting success.
+- The deterministic patch flow is available through
+  `PakEngineHost.exe patchpak <base.pak> <sourceFolder> <output.pak>`. It
+  preserves all unchanged base PAK entries, appends replacement bytes, updates
+  only matching archive index entries, preserves the base package timestamp for
+  repeatable package and sidecar output, writes a sidecar, and fails if a
+  source file's archive ID is not already present in the base PAK. Use this for
+  table-only updates to legacy patches such as `live_patch.pak` instead of
+  rebuilding the whole historical patch folder.
 - The unpack flow prefers the matching TXT sidecar because it contains original file paths.
 - If no TXT sidecar exists, the app first looks for a reference `_unpacked_pak\<pak name>\_manifest.tsv` near the selected client data.
 - When that reference manifest is found, the app shows known/unmapped counts before extraction, stages extraction in a temp folder, restores known files to original paths, and preserves manifest-unmapped IDs under `_unknown_by_id` with conservative inferred extensions where file signatures or text patterns are clear.

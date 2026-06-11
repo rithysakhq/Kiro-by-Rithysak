@@ -11,6 +11,17 @@
 - Managed pack output stores entries uncompressed, hashes virtual paths with the JX2 GBK path hash, writes file CRCs in the sidecar, and writes the package header CRC from the generated index table.
 - Before reporting success, the managed builder refuses duplicate archive IDs, rejects paths that cannot be encoded in the JX2 GBK code page, sorts entries by archive ID, parses the generated PAK back from disk, confirms the header/index/CRC/entry bounds, and checks the sidecar rows against the planned manifest.
 - The ID sort is important: a scratch pack/unpack test with both a root file and a nested file only restored the nested original path after the PAK index and sidecar rows were written in archive-ID order.
+- `PakEngineHost patchpak` is the deterministic safe path for updating a small
+  set of files inside an existing legacy PAK. It preserves unchanged base
+  entries byte-for-byte, appends replacement payloads, redirects only matching
+  archive IDs in the index, updates the header index offset/CRC, preserves the
+  base package timestamp for repeatable package and sidecar output, and writes
+  a sidecar. It intentionally fails when a replacement file's archive ID is not
+  already present in the base PAK.
+- Use `patchpak` for table-only updates to legacy packages such as
+  `live_patch.pak`. A full managed `packfolder` rebuild of an old patch can
+  change every entry's packing metadata from the legacy compressed form to
+  uncompressed form, which is not a safe assumption for production clients.
 - The legacy `PAKMAKER.exe` runtime memory contains `openFileDialog3` next to `PAK List File (*.txt)|*.txt`.
 - The legacy window title is `JX2 Build PAK by Nita`.
 - The sidecar format is tab separated:

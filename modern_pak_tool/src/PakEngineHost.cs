@@ -27,12 +27,12 @@ internal static class PakEngineHost
         try
         {
             if (args.Length < 1)
-                return Fail(2, "Usage: PakEngineHost version | probe [runtime] | packfolder [runtime] <folder> <output.pak> | packfolderlegacy [runtime] <folder> <output.pak> | unpackfolder <pak> <sidecar.txt> <outputFolder>");
+                return Fail(2, "Usage: PakEngineHost version | probe [runtime] | packfolder [runtime] <folder> <output.pak> | packfolderlegacy [runtime] <folder> <output.pak> | patchpak <base.pak> <sourceFolder> <output.pak> | unpackfolder <pak> <sidecar.txt> <outputFolder>");
 
             string mode = args[0].ToLowerInvariant();
             if (mode == "version")
             {
-                Console.WriteLine("KiroHostVersion=0.1.3");
+                Console.WriteLine("KiroHostVersion=0.1.4");
                 return 0;
             }
 
@@ -55,6 +55,13 @@ internal static class PakEngineHost
                 if (args.Length == 4)
                     return PackFolderLegacy(args[2], args[3]);
                 return Fail(2, "Usage: PakEngineHost packfolderlegacy [runtime] <folder> <output.pak>");
+            }
+
+            if (mode == "patchpak")
+            {
+                if (args.Length != 4)
+                    return Fail(2, "Usage: PakEngineHost patchpak <base.pak> <sourceFolder> <output.pak>");
+                return PatchPak(args[1], args[2], args[3]);
             }
 
             if (mode == "unpackfolder")
@@ -426,6 +433,202 @@ internal static class PakEngineHost
                     entries[i].Size.ToString() + "\t0\t" +
                     entries[i].Crc.ToString("x"));
             }
+        }
+    }
+
+    private static int PatchPak(string basePakPath, string sourceFolder, string outputPakPath)
+    {
+        basePakPath = Path.GetFullPath(basePakPath);
+        sourceFolder = Path.GetFullPath(sourceFolder);
+        outputPakPath = Path.GetFullPath(outputPakPath);
+
+        if (!File.Exists(basePakPath))
+            return Fail(3, "Base PAK not found: " + basePakPath);
+        if (!Directory.Exists(sourceFolder))
+            return Fail(4, "Source folder not found: " + sourceFolder);
+
+        string[] files = Directory.GetFiles(sourceFolder, "*", SearchOption.AllDirectories);
+        Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+        if (files.Length == 0)
+            return Fail(5, "Source folder has no files to patch: " + sourceFolder);
+
+        byte[] baseBytes = File.ReadAllBytes(basePakPath);
+        PackEntry[] baseEntries = ReadPakIndex(baseBytes);
+        Dictionary<uint, PackEntry> byHash = new Dictionary<uint, PackEntry>();
+        for (int i = 0; i < baseEntries.Length; i++)
+            byHash.Add(baseEntries[i].Hash, baseEntries[i]);
+
+        PackEntry[] replacements = BuildPackEntries(sourceFolder, files);
+        for (int i = 0; i < replacements.Length; i++)
+        {
+            if (!byHash.ContainsKey(replacements[i].Hash))
+                return Fail(6, "Patch source contains a file that is not present in the base PAK: " + replacements[i].Path + " (id " + replacements[i].Hash.ToString("x8") + "). This conservative mode only replaces existing entries.");
+        }
+
+        WritePatchedPak(baseBytes, baseEntries, replacements, outputPakPath);
+        ValidatePatchedPak(outputPakPath, replacements);
+
+        Console.WriteLine("BasePak=" + basePakPath);
+        Console.WriteLine("PatchSource=" + sourceFolder);
+        Console.WriteLine("PatchedFiles=" + replacements.Length.ToString());
+        Console.WriteLine("OutputPak=" + outputPakPath);
+        Console.WriteLine("OutputSidecar=" + outputPakPath + ".txt");
+        Console.WriteLine("PatchMode=PreserveExistingEntriesReplaceById");
+        Console.WriteLine("PatchResult=Success");
+        return 0;
+    }
+
+    private static PackEntry[] ReadPakIndex(byte[] pakBytes)
+    {
+        if (pakBytes.Length < HeaderSize)
+            throw new InvalidOperationException("PAK is too small to contain a valid header.");
+
+        using (MemoryStream stream = new MemoryStream(pakBytes, false))
+        using (BinaryReader reader = new BinaryReader(stream))
+        {
+            uint magic = reader.ReadUInt32();
+            int fileCount = reader.ReadInt32();
+            uint indexOffset = reader.ReadUInt32();
+            reader.ReadUInt32();
+            reader.ReadUInt32();
+            reader.ReadUInt32();
+            reader.ReadUInt32();
+            reader.ReadUInt32();
+
+            if (magic != PackMagic)
+                throw new InvalidOperationException("Base PAK header magic is not PACK.");
+            if (fileCount < 0)
+                throw new InvalidOperationException("Base PAK file count is negative.");
+            long tableBytes = checked((long)fileCount * 16L);
+            if (indexOffset < HeaderSize || (long)indexOffset + tableBytes > pakBytes.Length)
+                throw new InvalidOperationException("Base PAK index table points outside the archive.");
+
+            stream.Position = indexOffset;
+            PackEntry[] entries = new PackEntry[fileCount];
+            for (int i = 0; i < fileCount; i++)
+            {
+                uint hash = reader.ReadUInt32();
+                uint offset = reader.ReadUInt32();
+                uint size = reader.ReadUInt32();
+                uint packedSizeAndFlags = reader.ReadUInt32();
+                uint packedSize = packedSizeAndFlags & SizeMask;
+                if (offset < HeaderSize || (long)offset + packedSize > indexOffset)
+                    throw new InvalidOperationException("Base PAK entry " + i.ToString() + " points outside the payload region.");
+
+                entries[i] = new PackEntry();
+                entries[i].Path = "_ID_" + hash.ToString("x8");
+                entries[i].Hash = hash;
+                entries[i].Offset = offset;
+                entries[i].Size = size;
+                entries[i].PackedSizeAndFlags = packedSizeAndFlags;
+                entries[i].Crc = 0;
+                entries[i].Time = DateTime.Now;
+            }
+
+            return entries;
+        }
+    }
+
+    private static void WritePatchedPak(byte[] baseBytes, PackEntry[] baseEntries, PackEntry[] replacements, string outputPakPath)
+    {
+        uint oldIndexOffset = BitConverter.ToUInt32(baseBytes, 8);
+        uint packageTime = BitConverter.ToUInt32(baseBytes, 20);
+        DateTime packageDate = FromUnixTime(packageTime);
+        Dictionary<uint, PackEntry> replacementByHash = new Dictionary<uint, PackEntry>();
+        for (int i = 0; i < replacements.Length; i++)
+            replacementByHash.Add(replacements[i].Hash, replacements[i]);
+
+        PackEntry[] outputEntries = new PackEntry[baseEntries.Length];
+        for (int i = 0; i < baseEntries.Length; i++)
+        {
+            outputEntries[i] = new PackEntry();
+            outputEntries[i].Path = baseEntries[i].Path;
+            outputEntries[i].Hash = baseEntries[i].Hash;
+            outputEntries[i].Offset = baseEntries[i].Offset;
+            outputEntries[i].Size = baseEntries[i].Size;
+            outputEntries[i].PackedSizeAndFlags = baseEntries[i].PackedSizeAndFlags;
+            outputEntries[i].Crc = baseEntries[i].Crc;
+            outputEntries[i].Time = packageDate;
+        }
+
+        byte[] payloadPrefix = new byte[oldIndexOffset];
+        Buffer.BlockCopy(baseBytes, 0, payloadPrefix, 0, payloadPrefix.Length);
+
+        using (MemoryStream stream = new MemoryStream())
+        {
+            stream.Write(payloadPrefix, 0, payloadPrefix.Length);
+
+            for (int i = 0; i < outputEntries.Length; i++)
+            {
+                PackEntry replacement;
+                if (!replacementByHash.TryGetValue(outputEntries[i].Hash, out replacement))
+                    continue;
+
+                outputEntries[i].Path = replacement.Path;
+                outputEntries[i].Offset = checked((uint)stream.Position);
+                outputEntries[i].Size = replacement.Size;
+                outputEntries[i].PackedSizeAndFlags = replacement.Size;
+                outputEntries[i].Crc = replacement.Crc;
+                outputEntries[i].Time = packageDate;
+                stream.Write(replacement.Data, 0, replacement.Data.Length);
+            }
+
+            uint indexOffset = checked((uint)stream.Position);
+            byte[] table = BuildIndexTable(outputEntries);
+            uint packageCrc = Crc32(table);
+
+            byte[] outputBytes = stream.ToArray();
+            using (MemoryStream headerStream = new MemoryStream(outputBytes, true))
+            using (BinaryWriter writer = new BinaryWriter(headerStream))
+            {
+                writer.Write(PackMagic);
+                writer.Write(outputEntries.Length);
+                writer.Write(indexOffset);
+                writer.Write((uint)HeaderSize);
+                writer.Write(packageCrc);
+                writer.Write(packageTime);
+                writer.Write(0);
+                writer.Write(0);
+            }
+
+            string parent = Path.GetDirectoryName(outputPakPath);
+            if (!Directory.Exists(parent))
+                Directory.CreateDirectory(parent);
+
+            using (FileStream file = new FileStream(outputPakPath, FileMode.Create, FileAccess.Write))
+            {
+                file.Write(outputBytes, 0, outputBytes.Length);
+                file.Write(table, 0, table.Length);
+            }
+
+            WriteSidecar(outputPakPath + ".txt", outputEntries, packageTime, packageCrc);
+        }
+    }
+
+    private static void ValidatePatchedPak(string outputPakPath, PackEntry[] replacements)
+    {
+        byte[] bytes = File.ReadAllBytes(outputPakPath);
+        PackEntry[] entries = ReadPakIndex(bytes);
+        Dictionary<uint, PackEntry> byHash = new Dictionary<uint, PackEntry>();
+        for (int i = 0; i < entries.Length; i++)
+            byHash.Add(entries[i].Hash, entries[i]);
+
+        for (int i = 0; i < replacements.Length; i++)
+        {
+            PackEntry actual;
+            if (!byHash.TryGetValue(replacements[i].Hash, out actual))
+                throw new InvalidOperationException("Patched PAK is missing replacement id " + replacements[i].Hash.ToString("x8") + ".");
+            uint packedSize = actual.PackedSizeAndFlags & SizeMask;
+            uint flags = actual.PackedSizeAndFlags & FlagMask;
+            if (flags != 0)
+                throw new InvalidOperationException("Patched entry " + replacements[i].Path + " unexpectedly has compression flags.");
+            if (packedSize != replacements[i].Size || actual.Size != replacements[i].Size)
+                throw new InvalidOperationException("Patched entry " + replacements[i].Path + " size does not match source.");
+
+            byte[] actualData = new byte[packedSize];
+            Buffer.BlockCopy(bytes, checked((int)actual.Offset), actualData, 0, actualData.Length);
+            if (!BytesEqual(actualData, replacements[i].Data))
+                throw new InvalidOperationException("Patched entry " + replacements[i].Path + " bytes do not match source.");
         }
     }
 
