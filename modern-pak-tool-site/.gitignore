@@ -3,3 +3,4 @@ verification/
 .server.pid
 .DS_Store
 Thumbs.db
+.vercel
